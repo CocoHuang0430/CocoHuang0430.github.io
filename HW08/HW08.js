@@ -90,7 +90,17 @@ function endGame({ winner, line }) {
 
   if (winner) {
     stateEl.textContent = `${winner} 勝利！`;
-    line.forEach(i => cells[i].classList.add('win'));
+
+    // 勝利格子效果 + 動畫
+    line.forEach(i => {
+      const cell = cells[i];
+      cell.classList.add('win', 'flash');
+
+      // 監聽動畫結束，移除 flash class
+      cell.addEventListener('animationend', () => cell.classList.remove('flash'), { once: true });
+    });
+
+    // 更新分數
     if (winner === 'X') scoreX++;
     else scoreO++;
   } else {
@@ -98,7 +108,10 @@ function endGame({ winner, line }) {
     scoreDraw++;
   }
 
+  // 更新計分板
   updateScoreboard();
+
+  // 鎖定棋盤
   cells.forEach(c => c.disabled = true);
 }
 
@@ -130,26 +143,3 @@ btnResetAll.addEventListener('click', () => {
 // === 遊戲開始 ===
 init();
 
-function endGame({ winner, line }) {
-  active = false;
-
-  if (winner) {
-    stateEl.textContent = `${winner} 勝利！`;
-
-    line.forEach(i => {
-      const cell = cells[i];
-      cell.classList.add('win', 'flash'); // 套用 win + flash
-      // 移除動畫 class，防止下一局影響
-      cell.addEventListener('animationend', () => cell.classList.remove('flash'), { once: true });
-    });
-
-    if (winner === 'X') scoreX++;
-    else scoreO++;
-  } else {
-    stateEl.textContent = '平手';
-    scoreDraw++;
-  }
-
-  updateScoreboard();
-  cells.forEach(c => c.disabled = true);
-}
