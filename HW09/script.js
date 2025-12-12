@@ -105,9 +105,21 @@ function getRandomMove() {
 function updateBoard() {
   const cells = document.getElementsByClassName('cell');
   for (let i = 0; i < 9; i++) {
-    cells[i].innerText = board[i] || '';
+
+    // 清掉舊的 class，避免重複
+    cells[i].classList.remove('x', 'o');
+
+    // 不再使用 innerText（手寫風）
+    if (board[i] === 'X') {
+      cells[i].classList.add('x');
+    } else if (board[i] === 'O') {
+      cells[i].classList.add('o');
+    } else {
+      cells[i].innerText = '';
+    }
   }
 }
+
 
 // 判斷勝利
 function checkWin(player) {
