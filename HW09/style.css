@@ -98,3 +98,53 @@ button:active {
 .controls {
   margin-top: 20px;
 }
+/* ===== 手寫風 X ===== */
+.cell.x {
+  color: transparent;
+  position: relative;
+}
+
+.cell.x::before,
+.cell.x::after {
+  content: '';
+  position: absolute;
+  width: 70%;
+  height: 10%;
+  left: 15%;
+  background: #ff7ea8;
+  border-radius: 10px;
+  box-shadow:
+    0 0 3px rgba(255, 120, 170, 0.6),
+    0 0 8px rgba(255, 120, 170, 0.35);
+}
+
+.cell.x::before {
+  transform: rotate(45deg);
+  top: 45%;
+}
+
+.cell.x::after {
+  transform: rotate(-45deg);
+  top: 45%;
+}
+
+/* ===== 手寫風 O 調整版 ===== */
+.cell.o {
+  color: transparent;
+  position: relative;
+}
+
+.cell.o::before {
+  content: '';
+  position: absolute;
+  width: 50%;       /* 從 70% 改成 60%，圈圈小一點 */
+  height: 50%;      /* 高度也改 60% */
+  border-radius: 50%;
+  left: 15%;        /* 從 15% 改成 20%，讓圓圈置中 */
+  top: 15%;         /* 從 15% 改成 20%，讓圓圈置中 */
+  border: 8px solid #6ab9ff;
+  box-shadow:
+    0 0 3px rgba(110, 180, 250, 0.6),
+    0 0 8px rgba(110, 180, 250, 0.3);
+}
+
