@@ -101,3 +101,5 @@ button {
 button:active {
   background-color: #0088aa;
 }
+
+git reset --hard HEAD~ 
