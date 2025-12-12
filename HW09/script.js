@@ -1,7 +1,7 @@
 // ===== 遊戲主變數 =====
 let board = Array(9).fill(null); // 棋盤狀態
-let current = 'X';               // 當前玩家（玩家 X）
-let active = true;               // 遊戲是否進行中
+let current = 'X';               // 當前玩家（玩家為 X）
+let active = true;               // 控制遊戲是否進行中
 
 // ===== 初始化棋盤 =====
 function init() {
@@ -10,9 +10,10 @@ function init() {
   board = Array(9).fill(null);
   active = true;
   current = 'X';
+
   document.getElementById('status').innerText = '玩家 (X) 先手';
 
-  // 建立格子
+  // 建立 9 個格子
   for (let i = 0; i < 9; i++) {
     const cell = document.createElement('div');
     cell.classList.add('cell');
@@ -40,12 +41,21 @@ function playerMove(i) {
 
   current = 'O';
   document.getElementById('status').innerText = '電腦思考中...';
-  setTimeout(computerMove, 300); // AI 思考延遲
+
+  // 模擬電腦思考時間
+  setTimeout(computerMove, 700);
 }
 
-// ===== 電腦 AI（Minimax） =====
+// ===== 電腦 AI 下棋邏輯 =====
 function computerMove() {
-  let move = bestMove(); // 使用 Minimax 算法
+  // 1. 嘗試自己獲勝
+  let move = findWinningMove('O');
+
+  // 2. 阻止玩家獲勝
+  if (move === null) move = findWinningMove('X');
+
+  // 3. 否則隨機下在空格
+  if (move === null) move = getRandomMove();
 
   board[move] = 'O';
   updateBoard();
@@ -62,78 +72,52 @@ function computerMove() {
   document.getElementById('status').innerText = '輪到玩家 (X)';
 }
 
-// ===== Minimax 核心算法 =====
-function minimax(tempBoard, depth, isMaximizing) {
-  if (checkWinBoard(tempBoard, 'O')) return 10 - depth;
-  if (checkWinBoard(tempBoard, 'X')) return depth - 10;
-  if (tempBoard.every(cell => cell !== null)) return 0;
+// ===== 找到可立即獲勝的位置 =====
+function findWinningMove(player) {
+  const wins = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
 
-  if (isMaximizing) {
-    let maxEval = -Infinity;
-    for (let i = 0; i < 9; i++) {
-      if (!tempBoard[i]) {
-        tempBoard[i] = 'O';
-        let evalScore = minimax(tempBoard, depth + 1, false);
-        tempBoard[i] = null;
-        maxEval = Math.max(maxEval, evalScore);
-      }
+  for (let [a, b, c] of wins) {
+    const line = [board[a], board[b], board[c]];
+    if (line.filter(v => v === player).length === 2 && line.includes(null)) {
+      return [a, b, c][line.indexOf(null)];
     }
-    return maxEval;
-  } else {
-    let minEval = Infinity;
-    for (let i = 0; i < 9; i++) {
-      if (!tempBoard[i]) {
-        tempBoard[i] = 'X';
-        let evalScore = minimax(tempBoard, depth + 1, true);
-        tempBoard[i] = null;
-        minEval = Math.min(minEval, evalScore);
-      }
-    }
-    return minEval;
   }
+
+  return null;
 }
 
-// ===== 找最佳步 =====
-function bestMove() {
-  let bestScore = -Infinity;
-  let move = null;
-  for (let i = 0; i < 9; i++) {
-    if (!board[i]) {
-      board[i] = 'O';
-      let score = minimax(board, 0, false);
-      board[i] = null;
-      if (score > bestScore) {
-        bestScore = score;
-        move = i;
-      }
-    }
-  }
-  return move;
+// ===== 隨機選擇空格 =====
+function getRandomMove() {
+  const empty = board
+    .map((v, i) => (v ? null : i))
+    .filter(v => v !== null);
+
+  return empty[Math.floor(Math.random() * empty.length)];
 }
 
 // ===== 更新畫面 =====
 function updateBoard() {
   const cells = document.getElementsByClassName('cell');
   for (let i = 0; i < 9; i++) {
-    cells[i].classList.remove('x','o');
-    if (board[i] === 'X') cells[i].classList.add('x');
-    else if (board[i] === 'O') cells[i].classList.add('o');
+    cells[i].innerText = board[i] || '';
   }
 }
 
-// ===== 判斷勝利（原 board） =====
+// ===== 判斷勝利 =====
 function checkWin(player) {
-  return checkWinBoard(board, player);
-}
-
-// ===== 判斷勝利（傳入任意 board） =====
-function checkWinBoard(b, player) {
   const wins = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
   ];
-  return wins.some(([a,b,c]) => b[a]===player && b[b]===player && b[c]===player);
+
+  return wins.some(
+    ([a, b, c]) => board[a] === player && board[b] === player && board[c] === player
+  );
 }
 
 // ===== 判斷是否平手 =====
@@ -142,12 +126,12 @@ function isFull() {
 }
 
 // ===== 結束遊戲 =====
-function endGame(msg) {
-  document.getElementById('status').innerText = msg;
+function endGame(message) {
+  document.getElementById('status').innerText = message;
   active = false;
 }
 
-// ===== 重開遊戲 =====
+// ===== 重開一局 =====
 function resetGame() {
   init();
 }
