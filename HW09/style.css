@@ -1,105 +1,100 @@
-/* ===== 整體背景：像素星空＋像素草地 ===== */
+/* ===== 整體設定：柔和粉系、圓角、淡陰影 ===== */
 body {
   margin: 0;
-  font-family: "Press Start 2P", "Courier New", monospace;
+  font-family: "Microsoft JhengHei", sans-serif;
   text-align: center;
-  color: #fff;
-
-  background: 
-    /* 星空（黑底＋隨機白點） */
-    linear-gradient(#000, #000) 0 0 / 100% 60% no-repeat,
-    /* 草地（綠色格子） */
-    repeating-linear-gradient(
-      45deg,
-      #2b7e2b,
-      #2b7e2b 10px,
-      #239423 10px,
-      #239423 20px
-    ) 0 60% / 100% 40% no-repeat;
-
-  height: 100vh;
-  padding-top: 20px;
+  background: linear-gradient(180deg, #ffeef7, #e8f7ff);
+  padding-top: 30px;
+  color: #555;
 }
 
-/* ===== 標題 ===== */
 h1 {
-  color: #00eaff;
-  text-shadow: 2px 2px #0088aa;
-  font-size: 20px;
+  color: #ff7eb8;
+  font-size: 28px;
   margin-bottom: 10px;
+  text-shadow: 1px 1px rgba(255, 170, 200, 0.6);
 }
 
 #status {
-  font-size: 14px;
-  color: #ffeb3b;
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #6a6a6a;
 }
 
-/* ===== 棋盤 ===== */
+/* ===== 棋盤：柔色 + 圓角方格 ===== */
 .board {
   width: 300px;
   height: 300px;
   margin: 20px auto;
+
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
 
-  border: 4px solid #fff;
-  image-rendering: pixelated;
+  padding: 15px;
+  background: #ffffffbb;
+  border-radius: 20px;
+
+  box-shadow: 0 4px 12px rgba(255, 120, 180, 0.2);
 }
 
-/* ===== 每格 ===== */
+/* ===== 每一格：白、圓角、陰影、可愛 hover ===== */
 .cell {
-  background-color: #111;
-  border: 3px solid #00eaff;
+  background-color: white;
+  border-radius: 18px;
+  font-size: 2.2em;
+  color: #ff82a9;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
 
-  font-size: 0; /* 用 pseudo 元素顯示，不要字 */
+  cursor: pointer;
+  transition: 0.25s;
+
+  box-shadow: 0 2px 5px rgba(150, 150, 150, 0.15);
 }
 
-/* hover 效果 */
 .cell:hover {
-  background-color: #222;
+  background-color: #ffe3ee;
+  transform: scale(1.06);
 }
 
-/* ======== 像素 X ======== */
-.cell:has(> .pixel-x)::before {
-  content: "";
-  width: 32px;
-  height: 32px;
-  background:
-    repeating-linear-gradient(45deg,
-      transparent 0, transparent 6px,
-      #ff5252 6px, #ff5252 12px
-    );
-  transform: rotate(45deg);
+/* 玩家 X（粉色） */
+.cell.x {
+  color: #ff6fa8;
 }
 
-/* ======== 像素 O ======== */
-.cell:has(> .pixel-o)::before {
-  content: "";
-  width: 30px;
-  height: 30px;
-
-  border: 6px solid #00eaff;
-  border-radius: 50%;
+/* 電腦 O（天空藍） */
+.cell.o {
+  color: #6ab9ff;
 }
 
-/* ===== 按鈕 ===== */
+/* ===== 按鈕：軟糖風格 ===== */
 button {
-  background-color: #00eaff;
-  border: 3px solid #fff;
-  padding: 10px 20px;
-  font-family: "Press Start 2P", monospace;
-  font-size: 12px;
+  background: #ff99c8;
+  color: white;
+  border: none;
+  padding: 12px 26px;
+  font-size: 16px;
+  border-radius: 25px;
   cursor: pointer;
-  color: #000;
+
+  box-shadow: 0 3px 8px rgba(255, 140, 180, 0.25);
+  transition: 0.25s;
+}
+
+button:hover {
+  background: #ff82b3;
+  transform: translateY(-2px);
 }
 
 button:active {
-  background-color: #0088aa;
+  background: #ff6fa2;
+  transform: translateY(1px);
 }
 
-git reset --hard HEAD~ 
+.controls {
+  margin-top: 20px;
+}
