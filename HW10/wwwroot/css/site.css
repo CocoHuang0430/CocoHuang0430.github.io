@@ -1,0 +1,96 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial;
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.container {
+    width: 780px;
+    margin: 24px auto;
+}
+
+h1 {
+    margin-bottom: 8px;
+}
+
+#controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+/* 棋盤容器 - 咖啡色底 */
+#boardContainer {
+    background: #6f4e37; /* 深咖啡色 */
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: inline-block;
+}
+
+/* 棋盤格子 */
+#board {
+    border-collapse: collapse;
+}
+
+    #board td {
+        width: 64px;
+        height: 64px;
+        border: 2px solid rgba(0,0,0,0.15);
+        position: relative;
+        background: #a67c52; /* 淺咖啡色格子 */
+    }
+
+.cell {
+    cursor: pointer;
+}
+
+    /* 棋子樣式 - 立體感 + 翻轉動畫 */
+    .cell .disc {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        margin: auto;
+        margin-top: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.2);
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+    }
+
+/* 黑白棋顏色 */
+.disc.black {
+    background-color: black;
+}
+
+.disc.white {
+    background-color: white;
+}
+
+/* 下棋提示格子 - 淺米色 */
+.valid-move {
+    box-shadow: inset 0 0 0 4px rgba(255, 235, 205, 0.6);
+}
+
+/* 翻棋動畫類別 */
+.flip {
+    transform: rotateY(180deg);
+}
+
+/* 分數與回合 */
+#status {
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+#scoreBoard {
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+/* hover 效果 */
+.cell:hover:not(.disc) {
+    background-color: rgba(255, 235, 205, 0.3); /* 淺米色 hover */
+    transition: background-color 0.2s ease;
+}
