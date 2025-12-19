@@ -1,0 +1,36 @@
+﻿@page
+@model IndexModel
+
+@{
+    ViewData["Title"] = "Othello";
+}
+
+<div class="container">
+    <h1>Othello（黑白棋）</h1>
+
+    <div id="controls">
+        <button id="restartBtn">重新開始</button>
+        <span id="turnInfo"></span>
+
+        <div id="difficultyControls">
+            模式：
+            <button onclick="setDifficulty('easy')">簡單</button>
+            <button onclick="setDifficulty('hard')">困難</button>
+        </div>
+
+        <div id="scoreBoard">
+            黑: <span id="blackScore">2</span>
+            白: <span id="whiteScore">2</span>
+        </div>
+    </div>
+
+    <div id="boardContainer">
+        <table id="board" aria-label="Othello board"></table>
+    </div>
+
+    <div id="status"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/othello.js"></script>
+}
