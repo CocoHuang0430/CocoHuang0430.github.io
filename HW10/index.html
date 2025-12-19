@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello（黑白棋）</title>
+    <link rel="stylesheet" href="css/othello.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Othello（黑白棋）</h1>
+
+        <div id="controls">
+            <button id="restartBtn">重新開始</button>
+            <span id="turnInfo"></span>
+
+            <div id="scoreBoard">
+                黑: <span id="blackScore">2</span>
+                白: <span id="whiteScore">2</span>
+            </div>
+
+            <!-- 難度選擇 -->
+            <div id="difficultySelector">
+                難度：
+                <button onclick="setDifficulty('easy')">簡單</button>
+                <button onclick="setDifficulty('hard')">困難</button>
+            </div>
+        </div>
+
+        <div id="boardContainer">
+            <table id="board" aria-label="Othello board"></table>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="js/othello.js"></script>
+</body>
+</html>
