@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>1132939 -FinalTerm</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; color: #ecf0f1; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .game-container { position: relative; background: #DCB35C; padding: 15px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 4px solid #8e44ad; }
+        canvas { background: #DCB35C; cursor: pointer; display: block; }
+        .info-panel { margin: 15px; display: flex; gap: 30px; font-size: 1.1rem; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 8px; }
+        .score-box { text-align: center; }
+        .score-box span { font-size: 1.5rem; font-weight: bold; color: #f1c40f; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 650px; }
+        button { padding: 10px 18px; cursor: pointer; background: #34495e; color: #fff; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #5d6d7e; transform: translateY(-2px); }
+        button.primary { background: #e67e22; }
+        button.primary:hover { background: #d35400; }
+        #statusText { margin: 10px 0; color: #ffd700; font-size: 1.2rem; min-height: 1.5em; text-shadow: 1px 1px 2px #000; }
+    </style>
+</head>
+<body>
+
+    <h1>策略圍棋 AI (整合優化版)</h1>
+    
+    <div id="statusText">載入中...</div>
+
+    <div class="game-container">
+        <canvas id="goBoard" width="600" height="600"></canvas>
+    </div>
+
+    <div class="info-panel">
+        <div class="score-box">玩家 (黑) 提子: <span id="blackScore">0</span></div>
+        <div class="score-box">電腦 (白) 提子: <span id="whiteScore">0</span></div>
+    </div>
+
+    <div class="controls">
+        <button class="primary" onclick="passTurn()">虛手 (Pass)</button>
+        <button onclick="undoMove()">悔棋 (Undo)</button>
+        <button onclick="toggleTerritory()">形勢判斷</button>
+        <button onclick="calculateResult()">計算勝負</button>
+        <button onclick="resetGame()">重新開始</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('goBoard');
+    const ctx = canvas.getContext('2d');
+    const BOARD_SIZE = 19;
+    const MARGIN = 30;
+    const CELL_SIZE = (600 - MARGIN * 2) / (BOARD_SIZE - 1);
+
+    let board = [];
+    let currentPlayer = 1;
+    let capturedStones = { black: 0, white: 0 };
+    let boardHistory = []; 
+    let showTerritory = false;
+    let lastMove = null;
+
+    function init() {
+        board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+        currentPlayer = 1;
+        capturedStones = { black: 0, white: 0 };
+        boardHistory = [];
+        lastMove = null;
+        saveHistory();
+        updateUI();
+        drawBoard();
+    }
+
+    function saveHistory() {
+        boardHistory.push({
+            board: JSON.parse(JSON.stringify(board)),
+            captured: { ...capturedStones },
+            player: currentPlayer,
+            lastMove: lastMove ? {...lastMove} : null
+        });
+        if (boardHistory.length > 100) boardHistory.shift();
+    }
+
+    function undoMove() {
+        if (boardHistory.length > 2) {
+            boardHistory.pop(); // 移除電腦那步
+            boardHistory.pop(); // 移除玩家那步
+            const state = boardHistory[boardHistory.length - 1];
+            board = JSON.parse(JSON.stringify(state.board));
+            capturedStones = { ...state.captured };
+            currentPlayer = 1;
+            lastMove = state.lastMove;
+            drawBoard();
+            updateUI();
+        } else {
+            alert("已經是初始狀態了！");
+        }
+    }
+
+    function toggleTerritory() {
+        showTerritory = !showTerritory;
+        drawBoard();
+        document.getElementById('statusText').innerText = showTerritory ? "提示：正標註雙方勢力範圍" : (currentPlayer === 1 ? "輪到：玩家 (黑子)" : "電腦思考中...");
+    }
+
+    // --- AI 邏輯 ---
+    function computerPlay() {
+        const candidates = getSmartCandidates(board, 2);
+        if (candidates.length === 0) { passTurn(); return; }
+
+        let bestMove = null;
+        let maxWins = -1;
+
+        candidates.forEach(move => {
+            let wins = 0;
+            const sims = 20; 
+            for (let i = 0; i < sims; i++) {
+                if (simulateRandomGame(board, move, 2) === 2) wins++;
+            }
+            if (wins > maxWins) { maxWins = wins; bestMove = move; }
+        });
+
+        if (bestMove) executeMove(bestMove.x, bestMove.y);
+        else passTurn();
+    }
+
+    function getSmartCandidates(cur, p) {
+        let list = [];
+        const opp = 3 - p;
+        for (let y = 0; y < BOARD_SIZE; y++) {
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                if (cur[y][x] !== 0 || !isLegal(cur, x, y, p) || isTrueEye(cur, x, y, p)) continue;
+                let weight = 1;
+                let test = cur.map(r => [...r]);
+                if (applyMove(test, x, y, p) > 0) weight += 80;
+
+                let hasNeighbor = false;
+                for(let dy=-2; dy<=2; dy++) {
+                    for(let dx=-2; dx<=2; dx++) {
+                        let nx=x+dx, ny=y+dy;
+                        if(nx>=0 && nx<BOARD_SIZE && ny>=0 && ny<BOARD_SIZE && cur[ny][nx] !== 0) {
+                            hasNeighbor = true;
+                            if(cur[ny][nx] === opp) weight += 15;
+                        }
+                    }
+                }
+                if (hasNeighbor || (x%6===3 && y%6===3)) list.push({x, y, weight});
+            }
+        }
+        return list.sort((a,b) => b.weight - a.weight).slice(0, 20);
+    }
+
+    function executeMove(x, y) {
+        if (!isLegal(board, x, y, currentPlayer)) return;
+        const captured = applyMove(board, x, y, currentPlayer);
+        if (currentPlayer === 1) capturedStones.black += captured;
+        else capturedStones.white += captured;
+
+        lastMove = {x, y, color: currentPlayer};
+        currentPlayer = 3 - currentPlayer;
+        saveHistory();
+        drawBoard();
+        updateUI();
+
+        if (currentPlayer === 2) {
+            document.getElementById('statusText').innerText = "電腦正在尋找攻擊點...";
+            setTimeout(computerPlay, 400);
+        }
+    }
+
+    // --- 遊戲工具邏輯 ---
+    function isLegal(b, x, y, p) {
+        if (b[y][x] !== 0) return false;
+        let test = b.map(r => [...r]);
+        let captured = applyMove(test, x, y, p);
+        return getGroup(test, x, y).liberties > 0 || captured > 0;
+    }
+
+    function applyMove(b, x, y, p) {
+        b[y][x] = p;
+        let total = 0;
+        [[x+1,y],[x-1,y],[x,y+1],[x,y-1]].forEach(([nx,ny]) => {
+            if (nx>=0 && nx<BOARD_SIZE && ny>=0 && ny<BOARD_SIZE && b[ny][nx] === (3-p)) {
+                let g = getGroup(b, nx, ny);
+                if (g.liberties === 0) {
+                    g.stones.forEach(s => { b[s.y][s.x] = 0; total++; });
+                }
+            }
+        });
+        return total;
+    }
+
+    function getGroup(b, sx, sy) {
+        const color = b[sy][sx], stones = [], visited = new Set(), stack = [{x:sx, y:sy}];
+        let liberties = new Set();
+        while(stack.length) {
+            const {x,y} = stack.pop();
+            const key = `${x},${y}`;
+            if(visited.has(key)) continue;
+            visited.add(key); stones.push({x,y});
+            [[x+1,y],[x-1,y],[x,y+1],[x,y-1]].forEach(([nx,ny]) => {
+                if(nx>=0 && nx<BOARD_SIZE && ny>=0 && ny<BOARD_SIZE) {
+                    if(b[ny][nx] === 0) liberties.add(`${nx},${ny}`);
+                    else if(b[ny][nx] === color) stack.push({x:nx, y:ny});
+                }
+            });
+        }
+        return {stones, liberties: liberties.size};
+    }
+
+    function isTrueEye(b,x,y,p) {
+        if(b[y][x]!==0) return false;
+        for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+            let nx=x+dx, ny=y+dy;
+            if(nx>=0 && nx<BOARD_SIZE && ny>=0 && ny<BOARD_SIZE && b[ny][nx]!==p) return false;
+        }
+        return true;
+    }
+
+    function getInfluence(x, y) {
+        let bDist = 100, wDist = 100;
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                if (board[j][i] !== 0) {
+                    const d = Math.abs(x - i) + Math.abs(y - j);
+                    if (board[j][i] === 1) bDist = Math.min(bDist, d);
+                    else wDist = Math.min(wDist, d);
+                }
+            }
+        }
+        return bDist < wDist ? 1 : (wDist < bDist ? 2 : 0);
+    }
+
+    function calculateResult() {
+        let bT = 0, wT = 6.5;
+        for (let y = 0; y < BOARD_SIZE; y++) {
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                if (board[y][x] === 1) bT++;
+                else if (board[y][x] === 2) wT++;
+                else {
+                    const inf = getInfluence(x, y);
+                    if (inf === 1) bT++; else if (inf === 2) wT++;
+                }
+            }
+        }
+        alert(`黑棋地盤: ${bT.toFixed(1)}\n白棋地盤 (含貼目): ${wT.toFixed(1)}\n\n結果: ${bT > wT ? "黑勝 " + (bT-wT).toFixed(1) + " 目" : "白勝 " + (wT-bT).toFixed(1) + " 目"}`);
+    }
+
+    function simulateRandomGame(sB, fM, p) {
+        let tB = sB.map(r => [...r]);
+        applyMove(tB, fM.x, fM.y, p);
+        let cp = 3-p;
+        for(let i=0; i<30; i++) {
+            let rx = Math.floor(Math.random()*BOARD_SIZE), ry = Math.floor(Math.random()*BOARD_SIZE);
+            if (tB[ry][rx] === 0 && isLegal(tB, rx, ry, cp)) { applyMove(tB, rx, ry, cp); cp = 3-cp; }
+        }
+        let b=0, w=0;
+        for(let y=0; y<BOARD_SIZE; y++) for(let x=0; x<BOARD_SIZE; x++) { if(tB[y][x]===1) b++; if(tB[y][x]===2) w++; }
+        return (w + 6.5) > b ? 2 : 1;
+    }
+
+    // --- 繪圖 ---
+    function drawBoard() {
+        ctx.fillStyle = "#DCB35C"; ctx.fillRect(0,0,600,600);
+        ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+        for(let i=0; i<BOARD_SIZE; i++) {
+            ctx.beginPath();
+            ctx.moveTo(MARGIN+i*CELL_SIZE, MARGIN); ctx.lineTo(MARGIN+i*CELL_SIZE, 600-MARGIN);
+            ctx.moveTo(MARGIN, MARGIN+i*CELL_SIZE); ctx.lineTo(600-MARGIN, MARGIN+i*CELL_SIZE);
+            ctx.stroke();
+        }
+        [[3,3],[3,9],[3,15],[9,3],[9,9],[9,15],[15,3],[15,9],[15,15]].forEach(([x,y]) => {
+            ctx.beginPath(); ctx.arc(MARGIN+x*CELL_SIZE, MARGIN+y*CELL_SIZE, 4, 0, Math.PI*2);
+            ctx.fillStyle="#000"; ctx.fill();
+        });
+        for(let y=0; y<BOARD_SIZE; y++) for(let x=0; x<BOARD_SIZE; x++) if(board[y][x]) drawStone(x,y,board[y][x]);
+        if (showTerritory) {
+            for(let y=0; y<BOARD_SIZE; y++) for(let x=0; x<BOARD_SIZE; x++) {
+                if(board[y][x] === 0) {
+                    let inf = getInfluence(x,y);
+                    if(inf !== 0) {
+                        ctx.globalAlpha = 0.4; ctx.fillStyle = inf === 1 ? "#000" : "#fff";
+                        ctx.fillRect(MARGIN+x*CELL_SIZE-4, MARGIN+y*CELL_SIZE-4, 8, 8);
+                        ctx.globalAlpha = 1.0;
+                    }
+                }
+            }
+        }
+        if (lastMove) {
+            ctx.strokeStyle = "red"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(MARGIN+lastMove.x*CELL_SIZE, MARGIN+lastMove.y*CELL_SIZE, CELL_SIZE*0.2, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    }
+
+    function drawStone(x,y,color) {
+        const pX=MARGIN+x*CELL_SIZE, pY=MARGIN+y*CELL_SIZE;
+        ctx.beginPath(); ctx.arc(pX, pY, CELL_SIZE*0.45, 0, Math.PI*2);
+        const g = ctx.createRadialGradient(pX-5, pY-5, 2, pX, pY, CELL_SIZE*0.45);
+        if(color===1) { g.addColorStop(0,"#555"); g.addColorStop(1,"#000"); }
+        else { g.addColorStop(0,"#fff"); g.addColorStop(1,"#ddd"); }
+        ctx.fillStyle = g; ctx.fill();
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if(currentPlayer !== 1) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.round((e.clientX - rect.left - MARGIN) / CELL_SIZE);
+        const y = Math.round((e.clientY - rect.top - MARGIN) / CELL_SIZE);
+        if(x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) executeMove(x, y);
+    });
+
+    function passTurn() {
+        currentPlayer = 3 - currentPlayer;
+        saveHistory(); drawBoard(); updateUI();
+        if(currentPlayer === 2) setTimeout(computerPlay, 400);
+    }
+
+    function updateUI() {
+        document.getElementById('blackScore').innerText = capturedStones.black;
+        document.getElementById('whiteScore').innerText = capturedStones.white;
+        document.getElementById('statusText').innerText = currentPlayer === 1 ? "輪到：玩家 (黑子)" : "電腦思考中...";
+    }
+
+    function resetGame() { if(confirm("重新開始？")) init(); }
+    init();
+</script>
+</body>
+</html>
